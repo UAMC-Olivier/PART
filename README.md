@@ -14,7 +14,7 @@ You will need a Python distribution with the `numpy` module. The code was tested
 Get the code using:
 
 ```
-git clone 
+git clone git@github.com:UAMC-Olivier/PART.git
 ```
 
 Now either add PART to your PATH and give `PART.py` or move the `PART.py` script to the directory where you wish to use it.
