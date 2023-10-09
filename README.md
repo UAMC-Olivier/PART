@@ -17,7 +17,7 @@ Get the code using:
 git clone git@github.com:UAMC-Olivier/PART.git
 ```
 
-Now either add PART to your PATH and give `PART.py` or move the `PART.py` script to the directory where you wish to use it.
+Now either add PART to your PATH and give `PART.py` execute permission grants or move the `PART.py` script to the directory where you wish to use it.
 
 
 ## Usage
