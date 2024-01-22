@@ -711,11 +711,11 @@ The plumed file can be customized after running the script, for example to inclu
 
     my_parser.add_argument("-rp", "--RestraintPairs", help = """Residue pairs to which an artificial repulsion potential should be applied. Residue couples should be joined by a colon, while several pairs should be separated by ','.
 Examples: 'BNZ:BNZ' will apply the arificial repulsion potential only between all benzene residue pairs with residue names BNZ.
-'BNZ:BNZ,PRP:BNZ,PRP:PRP' will apply the repulsion potential to all benzene pairs, to all benzene-propane pairs, where the resiude name of propane is PRP and to all propane pairs. """ \
+'BNZ:BNZ,PRP:BNZ,PRP:PRP' will apply the repulsion potential to all benzene pairs, to all benzene-propane pairs, where the residue name of propane is PRP and to all propane pairs. """ \
             , type = str)
     
-    my_parser.add_argument("-dp", "--DistancePoints", help = """Input argumant that will determine which atoms will be used for the interresidue distance calculation. Every resiude present in the RestraintPairs should be present in this argument. Central atoms of each residue present in a residue restraint pair can by passed to the script by typing the residue name, a colon, and then the atomname of the chosen atom.
-It is is possible to use virtual atoms that are at the center of mass of a chosen set of atoms using the resiude name, a colon, COM and colon followed by the atom names of which the COM should be calculated, separated by a dash. Examples:
+    my_parser.add_argument("-dp", "--DistancePoints", help = """Input argumant that will determine which atoms will be used for the interresidue distance calculation. Every residue present in the RestraintPairs should be present in this argument. Central atoms of each residue present in a residue restraint pair can by passed to the script by typing the residue name, a colon, and then the atomname of the chosen atom.
+It is is possible to use virtual atoms that are at the center of mass of a chosen set of atoms using the residue name, a colon, COM and colon followed by the atom names of which the COM should be calculated, separated by a dash. Examples:
 'PRP:C01' will base the distance calculation on the C01 atom of propane zith residue name PRP. 'BNZ:COM:C01-C02-C03-C04-C05-C06,PRP:C01' will base the distance calculation of benzene (residue name BNZ) on the center of mass of the atoms C01 to C06 and the distance calculation of PRP will be based on the C01 atom of PRP.
  """ \
                 , type=str) 
