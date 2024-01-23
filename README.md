@@ -34,10 +34,10 @@ The restraints pair string lists all residue type pairs you wish to restrain. Se
 
 The distance point string should contain all residue names included in the restraints pair list, together with the atom on which to base the intermolecular distance calculation. Separate the residue name and the atomname by a colon. Use for example `'P1:C1'` to indicate that P1 intermolecular distances distances should be calculated by calculating the distances between the C1 atoms. It is also possible to use center of masses of molecules, for example `'P1:COM:C1-C2-C3'` to use the center of mass of the C1, C2 and C3 carbons. If you have used multiple residue names under `-rp`, define for each residue a central atom or a COM. Separate each definition by a comma. For example use, `P1:C1,P2:C1` to use the C1 atom of P1 and the C1 atom of P2 for the distance calculations. 
 
-See the examples under Example Usage for further info!
+See the examples under Example Usage for further info and two practical examples.
 
 
-To list the full description of all the keyword arguments use:
+It is possible to modify the repulsion potential by using the optional input arguments `-ul`, `-k`, `-exp` and `-eps`. To list the full description of all the keyword arguments use:
 
 ```
 PART.py -h
