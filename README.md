@@ -73,3 +73,10 @@ This command will create a `plumed.dat` file that makes sure restraints are appl
 ## Customizing the PLUMED file to add additional restraints
 
 After running PART, you can add additional custom restraints if desired. To add additional restraints to your simulation, open the PART output file (by default `plumed.dat`) with your favorite text editor. You can now add additional lines in this file to define new restraints. You can consult the [PLUMED manual](https://www.plumed.org/doc) to correctly define your additional restaints.
+
+## Citations
+
+If you found PART to be useful in you work, please consider citing the following paper:
+
+[O. Beyens, H. De Winter (2024). Preventing lipophilic aggregation in cosolvent molecular dynamics simulations with hydrophobic probes using Plumed Automatic Restraining Tool (PART). Journal of Cheminformatics, 16 (Article number: 23)](https://doi.org/10.1186/s13321-024-00819-y)
+
