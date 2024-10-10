@@ -861,6 +861,9 @@ def write_plumed_file( mode,myfile, self_restraint_list, nonself_restraint_list,
     with open(output, 'w') as myfile:
         myfile.write(plumed_file)
 
+    # Print success message
+    print(f'PART created the following output file: {output}')
+
 def main ():
     """
     Controls the execution of the script
