@@ -881,4 +881,5 @@ def main ():
     # 3. Writing the plumed file
     write_plumed_file(mode, myfile, self_restraint_list, nonself_restraint_list, distance_info, com_info, output, upper_limit, kappa, exp, eps)
 
-main()
+if __name__ == "__main__":
+    main()
