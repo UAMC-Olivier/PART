@@ -1,18 +1,22 @@
 #!/usr/bin/env python3
 
-from dataclasses import dataclass
 import argparse
 import numpy as np
 import sys
+from typing import Tuple, List, Dict, Optional
 
-@dataclass
+# NOTE: to improve user-friendliness ("use as script") we opted to put all modules in one file. 
+# NOTE: To maintain readability, we separate these modules by comment blocks.
+
+# --- Module 1: AtomGro ---
+
 class AtomGro:
     """
-    This dataclass contains all atom information for one atom  provided  by a .gro file. Attributes are descriptive :). Note that every atom has a unique ID and resid (gro file format start with 0 again for atomid/resid 100,000)
+    This class contains all atom information for one atom  provided  by a .gro file. Attributes are descriptive :). Note that every atom has a unique ID and resid (gro file format start with 0 again for atomid/resid 100,000)
 
     This "overflow" is controlled by atomid_overflow and resid_overflow. 
 
-    Parameters
+    Input Parameters
     -----------
     :grofile_line : the raw line of the grofile
     :atomid_overflow : counter on how many times 100,000 should be added to the atomid
@@ -30,12 +34,32 @@ class AtomGro:
 
     """
     
-    
-    def __init__(self, grofileline,atomid_overflow,resid_overflow):
-        self.resid = int(int(grofileline[0:5]) + 100000*resid_overflow)
+    resid: int
+    resname: str
+    atomname: str
+    atimid: int
+    velocity_info: bool
+    velocity: Optional[List[float]]
+    position: List[float]
+
+    def __init__(self, 
+                 grofileline: str, 
+                 atomid_overflow: int,
+                 resid_overflow: int) -> None:
+        """
+        Initialize Atom from .gro file
+
+        Input
+        --------
+        :grofile_line : the raw line of the grofile
+        :atomid_overflow : counter on how many times 100,000 should be added to the atomid
+        :resid_overflow : counter on how many times 100,000 should be added to the resid
+            
+        """
+        self.resid = int(grofileline[0:5]) + 100000*resid_overflow
         self.resname = grofileline[5:10].strip()
         self.atomname = grofileline[10:15].strip()
-        self.atomid = int(int(grofileline[15:20])+atomid_overflow*100000)
+        self.atomid = int(grofileline[15:20])+atomid_overflow*100000
 
         posx = float(grofileline[20:28].strip())
         posy = float(grofileline[28:36].strip())
@@ -52,6 +76,7 @@ class AtomGro:
 
         self.position = [posx, posy, posz]
 
+# --- Module 2: ParserGro ---
 
 class ParserGro:
     '''
@@ -61,8 +86,9 @@ class ParserGro:
     Attributes
     -----------
     :natoms : number of atoms
+    :boxvectors_unprocessed : str with vectors of the box
     :boxvectors: vectors of the box
-    :header : title line
+    :fileheader: title line
     :atoms: list of atom instances
 
     Methods
@@ -92,9 +118,17 @@ class ParserGro:
         Function that recalculates all the atomids in the class, starting from 1.
     '''
 
-    def __init__(self, grofile):
+    atoms: List[AtomGro]
+    boxvectors_unprocessed: str
+    boxvectors: Optional[List[float]]
+    fileheader: str
+
+    def __init__(self, 
+                 grofile: str) -> None:
         '''
         Initialize the atoms list with instances of the atom class.
+        
+        :grofile : path to the .gro file      
         '''
 
         self.atoms = []
@@ -157,7 +191,8 @@ class ParserGro:
             raise ValueError('ERROR2: Number of atoms in atoms list does not correspond with natoms value')
 
 
-    def resids_with_resname(self,resname):
+    def resids_with_resname(self, 
+                            resname: str) -> List[int]:
         '''
         Returns a list of resids of atoms that match a given residue name
         '''
@@ -170,10 +205,12 @@ class ParserGro:
 
         return result_list
 
-    def atomids_with_resid(self,resid):
+    def atomids_with_resid(self, 
+                           resid: int) -> List[int]:
         '''
         Returns a list of atomids that match a given resid
         '''
+
         result_list = []
 
         for atom in self.atoms:
@@ -184,20 +221,23 @@ class ParserGro:
 
         return result_list
 
-    def atomids_with_atomname(self,atomname):
+    def atomids_with_atomname(self,
+                              atomname: str) -> List[int]:
         '''
         Returns a list of atomids that match a given atom name
         '''
         
         result_list = []
 
-        for atom in self.atoms:
+        for atom in self.atoms: 
             if atom.atomname == atomname:
                 result_list.append(atom.atomid)
         
         return result_list
 
-    def atomids_with_resname_and_atomname(self, resname, atomname):
+    def atomids_with_resname_and_atomname(self, 
+                                          resname: str, 
+                                          atomname: str) -> List[int]:
         '''
         Return a list of atomids that match a given residue name and atomname
         '''
@@ -210,18 +250,25 @@ class ParserGro:
         
         return result_list
 
-    def atomid_to_atomname(self,atomid):
+    def atomid_to_atomname(self,
+                           atomid: int) -> str:
         '''
         Returns the atomname that is found for the given atomid
 
         '''
 
-        for atom in self.atoms:
+        found = False
+        for atom in self.atoms: 
             if atom.atomid == atomid:
                 myatomname = atom.atomname
+                found = True
+        if found == False:
+            raise ValueError(f"Could not find atom with atomid {atomid}")
+        
         return myatomname
 
-    def write_file(self, filename):
+    def write_file(self, 
+                   filename: str) -> None:
         '''
         Writes out the gro file of the system stored in the class
         '''
@@ -237,7 +284,7 @@ class ParserGro:
             
             return id_for_file
 
-        def _build_atom_resname_str(atom):
+        def _build_atom_resname_str(atom: AtomGro) -> str:
             resn_for_file = atom.resname
             
             while len(resn_for_file) != 5:
@@ -245,14 +292,14 @@ class ParserGro:
             
             return resn_for_file
 
-        def _build_atom_atomname_str(atom):
+        def _build_atom_atomname_str(atom: AtomGro) -> str:
             atom_atomname_str = atom.atomname
             
             while len(atom_atomname_str) != 5:
                 atom_atomname_str = f' {atom_atomname_str}'
             return atom_atomname_str
 
-        def _build_atom_id_str(atom):
+        def _build_atom_id_str(atom: AtomGro) -> str:
             id_for_file = atom.atomid
             while id_for_file > 99999:
                 id_for_file = id_for_file - 100000
@@ -264,7 +311,7 @@ class ParserGro:
             
             return id_for_file
         
-        def _build_position_str(atom):
+        def _build_position_str(atom: AtomGro) -> str:
             x = str(atom.position[0])
             y = str(atom.position[1])
             z = str(atom.position[2])
@@ -290,7 +337,7 @@ class ParserGro:
 
             return f'{x}{y}{z}'
 
-        def _build_velocity_str(atom):
+        def _build_velocity_str(atom: AtomGro) -> str:
             if atom.velocity_info == False:
                 x = ''
                 y = ''
@@ -349,12 +396,12 @@ class ParserGro:
                 pass
             
             else:
-                sys.exit('Exit was requestred by the user to not overwrite the file')
+                raise RuntimeError('Exit was requestred by the user to not overwrite the file')
 
         with open(filename,'w') as myfile:
             myfile.write(myfile_str)
 
-    def recount_atom_ids(self):
+    def recount_atom_ids(self) -> None:
         '''
         Function that recalculates all the atomids in the class, starting from 1. If followed by write_file, a .gro file with wrong atomids can be corrected.
         '''
@@ -364,7 +411,8 @@ class ParserGro:
             mycounter += 1
 
 
-    def print_atom_info(self,atomid):
+    def print_atom_info(self,
+                        atomid: int) -> None:
         '''
         Print some atoms information of a given atomid
         '''
@@ -383,8 +431,8 @@ class ParserGro:
         print('Velocities:', thisatom.velocity)
         print('-----------')
     
+# --- Module 3: AtomPdb ---
 
-@dataclass
 class AtomPdb:
     """
     This dataclass contains all atom information for one atom  provided  by a .pdb file. Attributes are descriptive :). Note that every atom has a unique ID and resid (pdb file format start with 0 again for atomid/resid 100,000)
@@ -407,22 +455,31 @@ class AtomPdb:
     :position
 
     """
+    resid: int
+    resname: str
+    atomname: str
+    atimid: int
+    chain: str
+    position: List[float]    
     
-    
-    def __init__(self, pdbfileline,atomid_overflow,resid_overflow):
-        self.resid = int(int(pdbfileline[22:26]) + 100000*resid_overflow) #c
-        self.resname = pdbfileline[17:20].strip() #c
-        self.atomname = pdbfileline[12:16].strip() #c
-        self.atomid = int(int(pdbfileline[6:11])+atomid_overflow*100000) #c
+    def __init__(self, 
+                 pdbfileline: str, 
+                 atomid_overflow: int, 
+                 resid_overflow: int) -> None:
+        self.resid = int(pdbfileline[22:26]) + 100000*resid_overflow
+        self.resname = pdbfileline[17:20].strip() 
+        self.atomname = pdbfileline[12:16].strip() 
+        self.atomid = int(pdbfileline[6:11])+atomid_overflow*100000 
         
-        self.chain = pdbfileline[21] #c
+        self.chain = pdbfileline[21] 
         
         x = float(pdbfileline[30:38].strip())
         y = float(pdbfileline[38:46].strip())
         z = float(pdbfileline[46:54].strip())
 
-        self.position = [x,y,z] #c
+        self.position = [x,y,z] 
 
+# --- Module 4: ParserPdb ---
 
 class ParserPdb:
     '''
@@ -455,7 +512,10 @@ class ParserPdb:
         Returns the atomname that is found for the given atomid
     '''
 
-    def __init__(self, pdbfile):
+    atoms: List[AtomPdb]
+
+    def __init__(self, 
+                 pdbfile: str) -> None:
         '''
         Initialize the atoms list with instances of the atom class.
         '''
@@ -490,7 +550,8 @@ class ParserPdb:
                 linecounter += 1
         
 
-    def resids_with_resname(self,resname):
+    def resids_with_resname(self,
+                            resname: str) -> List[int]:
         '''
         Returns a list of all resids with a given resname
         '''
@@ -502,7 +563,8 @@ class ParserPdb:
 
         return result_list
 
-    def atomids_with_resid(self,resid):
+    def atomids_with_resid(self, 
+                           resid: int) -> List[int]:
         '''
         Returns a list of all atomids with given resids
         '''
@@ -516,7 +578,8 @@ class ParserPdb:
 
         return result_list
 
-    def atomids_with_atomname(self,atomname):
+    def atomids_with_atomname(self,
+                              atomname: str) -> List[int]:
         '''
         Returns a list of atomids with given atomnames
         '''
@@ -528,9 +591,11 @@ class ParserPdb:
         
         return result_list
 
-    def atomids_with_resname_and_atomname(self, resname, atomname):
+    def atomids_with_resname_and_atomname(self, 
+                                          resname: str, 
+                                          atomname: str) -> List[int]:
         '''
-        Returns a list of atomnames of the atoms that have the given resname and atomname
+        Returns a list of atomids of the atoms that have the given resname and atomname
         '''
         
         result_list = []
@@ -541,7 +606,8 @@ class ParserPdb:
         
         return result_list
 
-    def atomnames_with_resname(self,resname):
+    def atomnames_with_resname(self, 
+                               resname: str) -> List[str]:
         '''
         Returns a list of atomnames that are found for the given resname
         Contains duplicates for each occurence of the chosen residue
@@ -555,18 +621,25 @@ class ParserPdb:
 
         return result_list
 
-    def atomid_to_atomname(self,atomid):
+    def atomid_to_atomname(self,
+                           atomid: int) -> str:
         '''
         Returns the atomname that is found for the given atomid
 
         '''
 
-        for atom in self.atoms:
+        found = False
+        for atom in self.atoms: 
             if atom.atomid == atomid:
                 myatomname = atom.atomname
+                found = True
+        if found == False:
+            raise ValueError(f"Could not find atom with atomid {atomid}")
+        
         return myatomname
 
-    def print_atom_info(self,atomid):
+    def print_atom_info(self,
+                        atomid: int) -> None:
         '''
         Print some atom information of an atom with a given atomid
         '''
@@ -584,7 +657,12 @@ class ParserPdb:
         print('Position:', thisatom.position)
         print('-----------')
 
-def find_atom_group_gro(grofile,residue_type,central_atom_for_probe):
+# --- Module 5: PART ---
+
+
+def find_atom_group_gro(grofile: str, 
+                        residue_type: str, 
+                        central_atom_for_probe: str) -> str:
     '''
     Returns all atoms ids of the grofile with the wanted residue type and central_atom_for_probe in a comma separated string
 
@@ -606,7 +684,9 @@ def find_atom_group_gro(grofile,residue_type,central_atom_for_probe):
 
     return atomids_str
 
-def find_atom_group_pdb(pdbfile,residue_type,central_atom_for_probe):
+def find_atom_group_pdb(pdbfile: str, 
+                        residue_type: str, 
+                        central_atom_for_probe: str) -> str:
     '''
     Returns all atoms ids of the pdbfile with the wanted residue type and central_atom_for_probe in a comma separated string
 
@@ -629,15 +709,18 @@ def find_atom_group_pdb(pdbfile,residue_type,central_atom_for_probe):
     return atomids_str
 
 
-def find_atom_group_COM(strucutrefile, mode,residue_type, atomnames_for_com):
+def find_atom_group_COM(structurefile: str,
+                        mode: str, 
+                        residue_type: str, 
+                        atomnames_for_com: str) -> Tuple[str, str]:
     '''
     Produces two necessary strings to be included in the plumed restraint file.
 
     Inputs
     -------
-    structurefile: string, filename of boxed protein .gro/.pdb file
-    mode: string, pdb mode or gro mode
-    atomnames_for_com: list of strings with atomnames to be selected
+    structurefile: str, filename of boxed protein .gro/.pdb file
+    mode: str, pdb mode or gro mode
+    atomnames_for_com: list of strs with atomnames to be selected
 
     Outputs
     --------
@@ -646,11 +729,11 @@ def find_atom_group_COM(strucutrefile, mode,residue_type, atomnames_for_com):
     '''
 
     if mode  == 'pdb':
-        file_parsed = ParserPdb(strucutrefile)
+        file_parsed = ParserPdb(structurefile)
         com_resid_list = file_parsed.resids_with_resname(residue_type)
 
     elif mode  == 'gro':
-        file_parsed = ParserGro(strucutrefile)
+        file_parsed = ParserGro(structurefile)
         com_resid_list = file_parsed.resids_with_resname(residue_type)
 
 
@@ -693,10 +776,20 @@ def find_atom_group_COM(strucutrefile, mode,residue_type, atomnames_for_com):
 
 
 # Used in main
-def command_line_parser():
+def command_line_parser()-> Tuple[
+    str,               # myfile
+    List[str],         # self_restraint_list
+    List[List[str]],   # nonself_restraint_list
+    Dict[str, str],    # distance_info
+    Dict[str, List[str]], # com_info
+    str,               # output
+    float,             # upper_limit
+    float,             # kappa
+    float,             # exp
+    float              # eps
+]:
     """
-    Performs argument parsing
-       
+    Performs argument parsing       
     """
 
     my_parser = argparse.ArgumentParser(description='''
@@ -807,10 +900,20 @@ It is is possible to use virtual atoms that are at the center of mass of a chose
             else:
                 raise ValueError('ERROR: Found entries in -dp that were not present in -rp. Please provide all necessary information')
 
-    return myfile, self_restraint_list, nonself_restraint_list, distance_info, com_info, output, upper_limit, kappa, exp, eps
+    return (myfile, self_restraint_list, nonself_restraint_list, distance_info, com_info, output, upper_limit, kappa, exp, eps)
 
 
-def write_plumed_file( mode,myfile, self_restraint_list, nonself_restraint_list, distance_info, com_info, output, upper_limit, kappa, exp, eps):
+def write_plumed_file(mode: str, 
+                      myfile: str, 
+                      self_restraint_list: List[str], 
+                      nonself_restraint_list: List[List[str]], 
+                      distance_info: Dict[str, str], 
+                      com_info: Dict[str, List[str]], 
+                      output: str, 
+                      upper_limit: float, 
+                      kappa: float, 
+                      exp: float, 
+                      eps:float) -> None:
     """
     Writes the plumed multibias file
     """
@@ -864,7 +967,7 @@ def write_plumed_file( mode,myfile, self_restraint_list, nonself_restraint_list,
     # Print success message
     print(f'PART created the following output file: {output}')
 
-def main ():
+def main() -> None:
     """
     Controls the execution of the script
     """
